@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>板橋咖啡廳地圖</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+#map { height: 650px; width: 100%; max-width: 1000px; margin: auto; border-radius: 15px; }
+body { font-family: "Microsoft JhengHei"; background: #f4f1ea; padding: 20px; }
+h2 { text-align: center; color: #5d4037; }
+#search { display:block; margin:10px auto; padding:8px; width:300px; }
+</style>
+</head>
+<body>
+
+<h2>☕ 板橋咖啡廳地圖</h2>
+<input id="search" placeholder="搜尋咖啡廳名稱...">
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const map = L.map('map').setView([25.0119, 121.4637], 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  let allMarkers = [];
+
+  fetch('api.php')
+    .then(res => res.json())
+    .then(cafes => {
+      console.log("抓到資料:", cafes);
+      cafes.forEach(place => {
+        const marker = L.marker([place.lat, place.lon])
+          .addTo(map)
+          .bindPopup(`<b>${place.name}</b><br>${place.address}`);
+        marker.cafeData = place;
+        allMarkers.push(marker);
+      });
+    })
+    .catch(err => console.error("fetch 錯誤:", err));
+
+  document.getElementById("search").addEventListener("input", function() {
+    const keyword = this.value.toLowerCase();
+    allMarkers.forEach(marker => {
+      if(marker.cafeData.name.toLowerCase().includes(keyword)){
+        marker.addTo(map);
+      } else {
+        map.removeLayer(marker);
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>
