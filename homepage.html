@@ -2,182 +2,102 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>板橋咖啡地圖 - 完整版</title>
+    <title>板橋咖啡地圖 - 徹底清空重連版</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 0; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .filter-btn.active {
-            background-color: #0891b2;
-            color: white;
-            border-color: #0891b2;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-        .leaflet-popup-content { font-family: "Microsoft JhengHei"; }
+        #status-box { position: fixed; top: 10px; right: 10px; z-index: 100; background: black; color: #0f0; padding: 10px; font-family: monospace; border-radius: 5px; font-size: 12px; }
+        .active-btn { background-color: #0891b2 !important; color: white !important; }
     </style>
 </head>
-<body class="overflow-hidden bg-gray-100">
+<body class="m-0 p-0 overflow-hidden">
 
+    <div id="status-box">正在嘗試連線雲端...</div>
     <div id="map"></div>
 
-    <button id="open-filter-btn" onclick="toggleFilter()" class="fixed top-5 left-5 z-30 bg-white w-12 h-12 shadow-lg rounded-full flex items-center justify-center text-cyan-600 hover:bg-cyan-50 hidden transition-all">
-        <i class="fas fa-filter"></i>
-    </button>
-
-    <div id="filter-panel" class="fixed top-5 left-5 w-80 bg-white shadow-2xl rounded-xl flex flex-col transition-all duration-300 z-40 max-h-[92vh]">
-        <div class="p-4 border-b bg-white rounded-t-xl flex justify-between items-center">
-            <h2 class="text-lg font-bold text-gray-800">板橋咖啡地圖</h2>
-            <button onclick="toggleFilter()" class="text-gray-400 hover:text-gray-600 p-1">
-                <i class="fas fa-chevron-left"></i>
-            </button>
+    <div class="fixed top-5 left-5 w-80 bg-white shadow-2xl rounded-xl z-40 flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b font-bold text-lg text-cyan-800">板橋咖啡地圖 (88筆)</div>
+        <div class="p-3 border-b">
+            <input type="text" id="search-box" placeholder="搜尋店名或地址..." class="w-full bg-gray-100 p-2 rounded text-sm focus:outline-cyan-500">
         </div>
-       
-        <div class="p-4 bg-white border-b">
-            <div class="relative">
-                <input type="text" id="search" placeholder="搜尋店名..." class="w-full bg-gray-100 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-cyan-500 transition">
-                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+        <div class="p-4 overflow-y-auto space-y-4 text-xs text-gray-600">
+            <div>
+                <p class="font-bold mb-2">環境現況</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">插座多</button>
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">收訊不錯</button>
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">安靜程度</button>
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">不限時</button>
+                </div>
             </div>
-        </div>
-
-        <div class="p-4 space-y-6 overflow-y-auto custom-scrollbar flex-grow">
-            <section>
-                <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">環境現況</h3>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-plug mb-1"></i>插座多</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-wifi mb-1"></i>收訊不錯</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-volume-down mb-1"></i>安靜程度</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-clock mb-1"></i>不限時</button>
+            <div>
+                <p class="font-bold mb-2">餐點與消費</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">提供輕食</button>
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">提供素食</button>
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">無低消</button>
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">低消一杯飲</button>
                 </div>
-            </section>
-
-            <section>
-                <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">餐點與消費</h3>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-utensils mb-1"></i>提供輕食</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-leaf mb-1 text-green-500"></i>提供素食</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-coins mb-1"></i>無低消</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-mug-hot mb-1"></i>低消一杯飲</button>
+            </div>
+            <div>
+                <p class="font-bold mb-2">特色服務</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">外文對應</button>
+                    <button onclick="this.classList.toggle('active-btn')" class="border p-2 rounded">寵物友善</button>
                 </div>
-            </section>
-
-            <section>
-                <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">特色服務</h3>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-language mb-1"></i>外文對應</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-lg py-2 flex flex-col items-center"><i class="fas fa-paw mb-1"></i>寵物友善</button>
-                </div>
-            </section>
-        </div>
-
-        <div class="p-4 border-t bg-gray-50 rounded-b-xl flex gap-2">
-            <button onclick="resetFilters()" class="flex-1 text-gray-500 text-sm font-medium hover:underline">清除重置</button>
-            <button class="flex-[2] bg-cyan-600 text-white py-2 rounded-lg font-bold hover:bg-cyan-700 shadow-md">確認篩選</button>
-        </div>
-    </div>
-
-    <div class="fixed top-5 right-5 z-50">
-        <button id="hamburger-btn" onclick="toggleMenu()" class="bg-white w-12 h-12 shadow-lg rounded-full flex items-center justify-center text-cyan-600 hover:bg-gray-50 transition-all">
-            <i id="hamburger-icon" class="fas fa-bars text-xl"></i>
-        </button>
-    </div>
-
-    <div id="side-menu" class="fixed top-0 right-0 h-full w-72 bg-white shadow-2xl translate-x-full transition-transform duration-300 z-40 flex flex-col">
-        <div class="p-10 pt-20 flex flex-col gap-6 flex-grow text-gray-700">
-            <a href="#" class="flex items-center gap-4 hover:text-cyan-600 transition font-medium"><i class="fas fa-home w-6"></i>回首頁</a>
-            <div id="login-btn-container"></div>
-            <div id="admin-section" class="hidden mt-4 p-4 bg-orange-50 rounded-lg border border-orange-100">
-                <p class="text-xs font-bold text-orange-600 mb-2 uppercase">管理員專區</p>
-                <a href="#" class="text-sm text-gray-600 hover:text-orange-600 block mb-2 font-medium">後台審核系統</a>
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // --- 地圖初始化與 API 串接 ---
-        document.addEventListener("DOMContentLoaded", function() {
-            const map = L.map('map', { zoomControl: false }).setView([25.0119, 121.4637], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
+        const _supabase = supabase.createClient(
+            'https://xyqmabihbnmeuzptqqpb.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5cW1hYmloYm5tZXV6cHRxcXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0Nzg2MzMsImV4cCI6MjA5MTA1NDYzM30.p5lTli-IXyY_LVU3PSR6DKwKyxmcFHkXy0-EGrXH48s'
+        );
 
-            let allMarkers = [];
-            fetch('api.php')
-                .then(res => res.json())
-                .then(cafes => {
-                    cafes.forEach(place => {
-                        const marker = L.marker([place.lat, place.lon]).addTo(map)
-                            .bindPopup(`<b style="color:#0891b2">${place.name}</b><br><small>${place.address}</small>`);
-                        marker.cafeData = place;
-                        allMarkers.push(marker);
-                    });
-                });
+        let map, markers = [];
 
-            // 搜尋店名連動
-            document.getElementById("search").addEventListener("input", function() {
-                const keyword = this.value.toLowerCase();
-                allMarkers.forEach(m => {
-                    if(m.cafeData.name.toLowerCase().includes(keyword)) m.addTo(map);
-                    else map.removeLayer(m);
+        async function init() {
+            // 1. 地圖初始化 (中心設在板橋)
+            map = L.map('map', { zoomControl: false }).setView([25.0119, 121.4637], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            document.getElementById('status-box').innerText = "連線中...";
+
+            // 2. 抓取資料
+            const { data, error } = await _supabase.from('cafes').select('*');
+
+            if (error) {
+                document.getElementById('status-box').innerText = "❌ 錯誤: " + error.message;
+                return;
+            }
+
+            document.getElementById('status-box').innerText = `✅ 成功連線！抓到 ${data.length} 筆資料`;
+
+            // 3. 畫點 (使用 CircleMarker，絕不破圖)
+            data.forEach(c => {
+                const marker = L.circleMarker([c.latitude, c.longitude], {
+                    radius: 8, fillColor: "#0891b2", color: "#fff", weight: 2, fillOpacity: 0.8
+                }).addTo(map).bindPopup(`<b>${c.name}</b><br>${c.address || ''}`);
+                
+                marker.cafeData = c;
+                markers.push(marker);
+            });
+
+            // 4. 搜尋功能
+            document.getElementById('search-box').addEventListener('input', function(e) {
+                const key = e.target.value.toLowerCase().trim();
+                markers.forEach(m => {
+                    const match = m.cafeData.name.toLowerCase().includes(key) || m.cafeData.address.toLowerCase().includes(key);
+                    if (match) { m.addTo(map); } else { map.removeLayer(m); }
                 });
             });
-        });
-
-        // --- UI 控制函式 ---
-        function toggleFilter() {
-            const panel = document.getElementById('filter-panel');
-            const openBtn = document.getElementById('open-filter-btn');
-            panel.classList.toggle('-translate-x-[120%]');
-            setTimeout(() => { openBtn.classList.toggle('hidden'); }, 200);
         }
 
-        function toggleMenu() {
-            const menu = document.getElementById('side-menu');
-            const icon = document.getElementById('hamburger-icon');
-            menu.classList.toggle('translate-x-full');
-            icon.className = menu.classList.contains('translate-x-full') ? 'fas fa-bars text-xl' : 'fas fa-times text-xl';
-        }
-
-        function toggleActive(btn) { btn.classList.toggle('active'); }
-        function resetFilters() { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); }
-    </script>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-       
-        const firebaseConfig = {
-            apiKey: "AIzaSyCrVoOqiW-k3rARwQQ_AA31jVrJhNhHZZg",
-            authDomain: "sa-cafe.firebaseapp.com",
-            projectId: "sa-cafe",
-            storageBucket: "sa-cafe.firebasestorage.app",
-            messagingSenderId: "315009789014",
-            appId: "1:315009789014:web:b22db4d279b684a6f95ff7",
-            measurementId: "G-GT6385G92X"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
-        const provider = new GoogleAuthProvider();
-
-        window.loginWithGoogle = () => signInWithPopup(auth, provider);
-        window.logout = () => signOut(auth);
-
-        onAuthStateChanged(auth, (user) => {
-            const container = document.getElementById('login-btn-container');
-            if (user) {
-                container.innerHTML = `
-                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-4">
-                        <img src="${user.photoURL}" class="w-10 h-10 rounded-full border border-cyan-200">
-                        <div><p class="text-sm font-bold">${user.displayName}</p>
-                        <button onclick="logout()" class="text-xs text-red-500 hover:underline">登出</button></div>
-                    </div>`;
-            } else {
-                container.innerHTML = `<button onclick="loginWithGoogle()" class="w-full bg-cyan-600 text-white py-3 rounded-xl font-bold hover:bg-cyan-700 transition flex items-center justify-center gap-2"><i class="fab fa-google"></i> Google 快速登入</button>`;
-            }
-        });
+        init();
     </script>
 </body>
 </html>
