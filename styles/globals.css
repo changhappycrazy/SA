@@ -1,0 +1,43 @@
+html,
+body,
+#__next {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: "Microsoft JhengHei", sans-serif;
+  background: #f4f1ea;
+}
+
+body {
+  overflow: hidden;
+}
+
+#map {
+  height: 100vh;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+.filter-btn.active {
+  background-color: #0891b2;
+  color: white;
+  border-color: #0891b2;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.leaflet-popup-content {
+  font-family: "Microsoft JhengHei";
+  font-size: 14px;
+}

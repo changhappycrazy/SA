@@ -1,157 +1,54 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>板橋咖啡地圖 - 公開分享版</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Next.js 應用已建立</title>
     <style>
-        #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 0; }
-        .filter-btn.active {
-            background-color: #0891b2; color: white; border-color: #0891b2;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        body {
+            margin: 0;
+            font-family: "Microsoft JhengHei", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f4f1ea;
+            color: #333;
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .leaflet-popup-content { font-family: "Microsoft JhengHei"; font-size: 14px; }
+        .notice {
+            max-width: 560px;
+            padding: 32px;
+            border-radius: 24px;
+            background: #ffffff;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+        .notice h1 {
+            margin-bottom: 16px;
+            font-size: 1.5rem;
+        }
+        .notice p {
+            margin: 0 0 12px;
+            line-height: 1.6;
+        }
+        .notice code {
+            display: block;
+            margin: 12px auto;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
     </style>
 </head>
-<body class="overflow-hidden bg-gray-100">
-
-    <div id="map"></div>
-
-    <div class="fixed top-5 right-5 z-50 flex items-center gap-3">
-        <div id="user-info" class="hidden bg-white/90 backdrop-blur px-3 py-2 rounded-full shadow-lg border border-cyan-100 flex items-center gap-3">
-            <img id="user-avatar" src="" class="w-8 h-8 rounded-full border border-cyan-200">
-            <div class="flex flex-col">
-                <span id="user-name" class="text-[10px] font-bold text-gray-700 leading-tight"></span>
-                <button onclick="handleLogout()" class="text-[9px] text-red-500 hover:underline text-left">登出</button>
-            </div>
-        </div>
-        <button id="login-btn" onclick="handleLogin()" class="bg-white text-cyan-600 px-5 py-2.5 rounded-full font-bold shadow-xl hover:bg-cyan-50 transition flex items-center gap-2 border border-cyan-100">
-            <i class="fab fa-google"></i> Google 登入
-        </button>
+<body>
+    <div class="notice">
+        <h1>已轉成 Next.js 專案</h1>
+        <p>原本的 `homepage.html` 已改為 Next.js 應用，請切換到新入口頁面：</p>
+        <code>pages/index.js</code>
+        <p>如果要執行此應用，請在專案根目錄下運行：</p>
+        <code>npm install</code>
+        <code>npm run dev</code>
     </div>
-
-    <div id="filter-panel" class="fixed top-5 left-5 w-80 bg-white/95 backdrop-blur shadow-2xl rounded-2xl flex flex-col z-40 max-h-[92vh]">
-        <div class="p-5 border-b">
-            <h2 class="text-xl font-black text-gray-800">板橋咖啡地圖</h2>
-            <p id="load-status" class="text-[10px] text-cyan-600 font-bold mt-1 uppercase">正在連線雲端...</p>
-        </div>
-       
-        <div class="p-4 border-b">
-            <input type="text" id="search-input" placeholder="搜尋店名或地址..." class="w-full bg-gray-100 border-none rounded-xl py-2.5 px-4 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
-        </div>
-
-        <div class="p-5 space-y-6 overflow-y-auto custom-scrollbar flex-grow">
-            <section>
-                <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">環境現況</h3>
-                <div class="grid grid-cols-2 gap-2 text-[10px]">
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-plug mb-1"></i>插座多</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-wifi mb-1"></i>收訊不錯</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-volume-down mb-1"></i>安靜程度</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-clock mb-1"></i>不限時</button>
-                </div>
-            </section>
-            <section>
-                <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">餐點與消費</h3>
-                <div class="grid grid-cols-2 gap-2 text-[10px]">
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-utensils mb-1"></i>提供輕食</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-leaf mb-1 text-green-500"></i>提供素食</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-coins mb-1"></i>無低消</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-mug-hot mb-1"></i>低消一杯飲</button>
-                </div>
-            </section>
-            <section>
-                <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">特色服務</h3>
-                <div class="grid grid-cols-2 gap-2 text-[10px]">
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-language mb-1"></i>外文對應</button>
-                    <button onclick="toggleActive(this)" class="filter-btn border rounded-xl py-2.5 flex flex-col items-center bg-white"><i class="fas fa-paw mb-1 text-orange-400"></i>寵物友善</button>
-                </div>
-            </section>
-        </div>
-
-        <div class="p-4 border-t bg-gray-50 flex gap-2 rounded-b-2xl">
-            <button onclick="resetFilters()" class="flex-1 text-gray-400 text-xs font-bold">重置</button>
-            <button onclick="applyFilters()" class="flex-[2] bg-cyan-600 text-white py-2.5 rounded-xl font-black text-sm shadow-md">確認篩選</button>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        // --- 1. 初始化 Supabase ---
-        const SUPABASE_URL = 'https://xyqmabihbnmeuzptqqpb.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5cW1hYmloYm5tZXV6cHRxcXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0Nzg2MzMsImV4cCI6MjA5MTA1NDYzM30.p5lTli-IXyY_LVU3PSR6DKwKyxmcFHkXy0-EGrXH48s';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let map, allMarkers = [];
-
-        async function init() {
-            // 初始化地圖
-            map = L.map('map', { zoomControl: false }).setView([25.0119, 121.4637], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-            // 直接載入資料 (Public)
-            loadData();
-            // 檢查登入狀態 (純顯示 UI)
-            checkUser();
-        }
-
-        async function loadData() {
-            const { data, error } = await _supabase.from('cafes').select('*');
-            if (error) {
-                document.getElementById('load-status').innerText = "❌ 載入失敗";
-                return;
-            }
-            document.getElementById('load-status').innerText = `✅ 已載入 ${data.length} 筆資料`;
-
-            data.forEach(c => {
-                const marker = L.circleMarker([c.latitude, c.longitude], {
-                    radius: 8, fillColor: "#0891b2", color: "#fff", weight: 2, fillOpacity: 0.8
-                }).addTo(map).bindPopup(`<b>${c.name}</b><br><small>${c.address || ''}</small>`);
-                
-                marker.cafeData = c;
-                allMarkers.push(marker);
-            });
-        }
-
-        async function checkUser() {
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                document.getElementById('login-btn').classList.add('hidden');
-                document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('user-name').innerText = session.user.user_metadata.full_name;
-                document.getElementById('user-avatar').src = session.user.user_metadata.avatar_url;
-            }
-        }
-
-        // --- 搜尋與篩選 ---
-        function applyFilters() {
-            const val = document.getElementById("search-input").value.toLowerCase().trim();
-            allMarkers.forEach(m => {
-                const match = m.cafeData.name.toLowerCase().includes(val) || (m.cafeData.address && m.cafeData.address.toLowerCase().includes(val));
-                if (match) { if (!map.hasLayer(m)) m.addTo(map); }
-                else { if (map.hasLayer(m)) map.removeLayer(m); }
-            });
-        }
-
-        function toggleActive(btn) { btn.classList.toggle('active'); }
-        function resetFilters() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById("search-input").value = "";
-            applyFilters();
-        }
-
-        async function handleLogin() { await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } }); }
-        async function handleLogout() { await _supabase.auth.signOut(); location.reload(); }
-
-        document.getElementById("search-input").addEventListener("input", applyFilters);
-        init();
-    </script>
 </body>
 </html>
